@@ -15,19 +15,20 @@ export default class Login extends HTMLElement{
     }
 
     setupLoginHandler() {
-        this.Api.checkUserInput('#loginForm')
-            .then(result => {
+        this.Api.checkUserInput('#loginForm', (error, result) => {
+            if (error) {
+                console.error('Login failed:', error);
+            } else {
                 if (result && result.data) {
                     localStorage.setItem('userData', JSON.stringify(result.data));
                     this.Router.route("#home", true);
                 } else {
                     console.error('Login failed');
                 }
-            })
-            .catch(error => {
-                console.error('Login failed:', error);
-            });
+            }
+        });
     }
+    
 
     renderHTML() {
         this.innerHTML = `

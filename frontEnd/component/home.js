@@ -94,6 +94,7 @@ export default class Homepage extends HTMLElement {
             console.log('No user data found');
             return null; // Ensure to handle this case in connectedCallback
         }
+
     };
 
     createUserProfile(userData) {
@@ -101,19 +102,19 @@ export default class Homepage extends HTMLElement {
             .append('svg')
             .attr('viewBox', '0 0 200 200') // Adjusted viewBox for smaller size
             .attr('preserveAspectRatio', 'xMidYMid meet');
-    
+
         // Level circle
         const arc = d3.arc()
             .innerRadius(35) // Reduced inner radius
             .outerRadius(50) // Reduced outer radius
             .startAngle(0)
             .endAngle(2 * Math.PI * (userData[0].events[0].level / 60));
-    
+
         svg.append('path')
             .attr('d', arc)
             .attr('transform', 'translate(100,100)')
             .attr('fill', '#3498db');
-    
+
         // Level text
         svg.append('text')
             .attr('x', 100)
@@ -123,7 +124,7 @@ export default class Homepage extends HTMLElement {
             .style('font-size', '14px')
             .style('font-weight', 'bold')
             .text(userData[0].events[0].level);
-    
+
         // "Level" text
         svg.append('text')
             .attr('x', 100)
@@ -131,7 +132,7 @@ export default class Homepage extends HTMLElement {
             .attr('text-anchor', 'middle')
             .style('font-size', '9px') // Reduced font size
             .text('Level');
-    
+
         // User name
         svg.append('text')
             .attr('x', 100)
@@ -140,57 +141,57 @@ export default class Homepage extends HTMLElement {
             .style('font-size', '9px') // Reduced font size
             .style('font-weight', 'bold')
             .text(`${userData[0].firstName} ${userData[0].lastName}`);
-    
+
     }
-    
+
     createXPEvolutionGraph(xpData) {
-        const margin = {top: 30, right: 20, bottom: 30, left: 50};
+        const margin = { top: 30, right: 20, bottom: 30, left: 50 };
         const width = 460 - margin.left - margin.right;
         const height = 280 - margin.top - margin.bottom;
-    
+
         const svg = d3.select('#xpEvolutionGraph')
             .append('svg')
             .attr('viewBox', `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
             .attr('preserveAspectRatio', 'xMidYMid meet')
             .append('g')
             .attr('transform', `translate(${margin.left},${margin.top})`);
-    
+
         const x = d3.scaleTime()
             .range([0, width]);
-    
+
         const y = d3.scaleLinear()
             .range([height, 0]);
-    
+
         const line = d3.line()
             .x(d => x(new Date(d.createdAt)))
             .y(d => y(d.cumulativeXP / 1000000)); // Convert to Mo
-    
+
         // Process data
         let cumulativeXP = 0;
         const processedData = xpData
             .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
             .map(d => {
                 cumulativeXP += d.amount;
-                return {...d, cumulativeXP};
+                return { ...d, cumulativeXP };
             });
-    
+
         x.domain(d3.extent(processedData, d => new Date(d.createdAt)));
         y.domain([0, d3.max(processedData, d => d.cumulativeXP / 1000000)]); // Convert to Mo
-    
+
         svg.append('path')
             .datum(processedData)
             .attr('fill', 'none')
             .attr('stroke', '#3498db')
             .attr('stroke-width', 2)
             .attr('d', line);
-    
+
         svg.append('g')
             .attr('transform', `translate(0,${height})`)
             .call(d3.axisBottom(x).ticks(5));
-    
+
         svg.append('g')
             .call(d3.axisLeft(y).ticks(5).tickFormat(d => d + ' Mo')); // Add 'Mo' to y-axis labels
-    
+
         svg.append('text')
             .attr('x', width / 2)
             .attr('y', -margin.top / 2)
@@ -204,55 +205,55 @@ export default class Homepage extends HTMLElement {
         const width = 100;
         const height = 100;
         const radius = Math.min(width, height) / 3;
-    
+
         const svg = d3.select('#auditGraph')
             .append('svg')
             .attr('viewBox', `0 0 ${width} ${height}`)
             .attr('preserveAspectRatio', 'xMidYMid meet')
             .append('g')
             .attr('transform', `translate(${width / 2},${height / 2})`);
-    
+
         const color = d3.scaleOrdinal()
             .domain(['up', 'down'])
             .range(['#2ecc71', '#e74c3c']);
-    
+
         const pie = d3.pie()
             .value(d => d.value)
             .sort(null);
-    
+
         const arc = d3.arc()
             .innerRadius(radius * 0.7)
-            .outerRadius(radius/2);
-    
+            .outerRadius(radius / 2);
+
         const data = [
-            {name: 'up', value: userData[0].totalUp},
-            {name: 'down', value: userData[0].totalDown}
+            { name: 'up', value: userData[0].totalUp },
+            { name: 'down', value: userData[0].totalDown }
         ];
-    
+
         const arcs = svg.selectAll('arc')
             .data(pie(data))
             .enter()
             .append('g');
-    
+
         arcs.append('path')
             .attr('d', arc)
             .attr('fill', d => color(d.data.name));
-    
+
         const auditRatio = userData[0].totalUp / userData[0].totalDown;
-    
+
         svg.append('text')
             .attr('text-anchor', 'middle')
             .attr('dominant-baseline', 'central')
             .style('font-size', '9px')
             .text(auditRatio.toFixed(1));
-    
+
         svg.append('text')
             .attr('text-anchor', 'middle')
             .attr('dominant-baseline', 'central')
             .attr('dy', '1.5em')
             .style('font-size', '4px')
             .text('Audit Ratio');
-    
+
         svg.append('text')
             .attr('x', 0)
             .attr('y', -radius - 10)
@@ -273,9 +274,9 @@ export default class Homepage extends HTMLElement {
             }
         });
 
-        const processedSkillData = Array.from(skillMap, ([skill, value]) => ({skill, value}));
+        const processedSkillData = Array.from(skillMap, ([skill, value]) => ({ skill, value }));
 
-        const margin = {top: 20, right: 20, bottom: 40, left: 40};
+        const margin = { top: 20, right: 20, bottom: 40, left: 40 };
         const width = 500 - margin.left - margin.right;
         const height = 300 - margin.top - margin.bottom;
 
@@ -329,9 +330,9 @@ export default class Homepage extends HTMLElement {
         const button = this.querySelector('#logoutBtn');
         if (button) {
             button.addEventListener('click', () => {
-               localStorage.removeItem("jwt")
-               localStorage.removeItem("userData")
-               this.Router.route("", true)
+                localStorage.removeItem("jwt")
+                localStorage.removeItem("userData")
+                this.Router.route("", true)
             });
         }
     }

@@ -6,66 +6,70 @@ export default class API {
         this.checkUserInput = this.checkUserInput.bind(this)
     }
 
-    checkUserInput = (formSelector) => {
-        return new Promise((resolve, reject) => {
-            const form = this.container.querySelector(formSelector);
-            form.addEventListener('submit', async(event) => {
-                event.preventDefault();
-                const { errors, validData } = this.validateForm(event);
-                if (Object.keys(errors).length === 0) {
-                    try {
-                        const result = await this.signin(validData, 'https://learn.zone01dakar.sn/api/auth/signin');
-                        resolve(result);  
-                    } catch (error) {
-                        this.displayErrors({ general: error.message });
-                        reject(error); 
+    checkUserInput = (formSelector, callback) => {
+        const form = this.container.querySelector(formSelector);
+    
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            
+            const { errors, data } = this.validateForm(event);
+    
+            if (Object.keys(errors).length === 0) {
+                try {
+                    const result = await this.signin(data, 'https://learn.zone01dakar.sn/api/auth/signin');
+                    
+                    if (result) {
+                        // Handle successful login
+                        console.log('Login successful', result);
+                        if (callback) callback(null, result);  // Call callback with result
+                    } else {
+                        this.displayErrors({ general: 'invalid credentials' });
+                        if (callback) callback(new Error('Login failed'));  // Call callback with error
                     }
-                } else {
-                    this.displayErrors(errors);
-                    reject(errors);  
+                } catch (error) {
+                    this.displayErrors({ general: error.message });
+                    if (callback) callback(error);  // Call callback with error
                 }
-            });
+            } else {
+                this.displayErrors(errors);
+                if (callback) callback(new Error('Validation errors'));  // Call callback with validation errors
+            }
         });
     }
+    
 
     validateForm(event) {
         const formData = new FormData(event.target);
+        const data = Object.fromEntries(formData.entries());
         const errors = {};
-        const validData = {};
         
-        for (let [key, value] of formData) {
+        for (let [key, value] of Object.entries(data)) {
             if (!value.trim()) {
                 errors[key] = `${key} is required`;
-            }else{
-                validData[key] = value
             }
         }        
-        return { errors, validData };
+        return { errors, data };
     }
 
     displayErrors(errors) {
         this.container.querySelectorAll('.error-message').forEach(el => el.remove());
 
-        for (let [key, message] of Object.entries(errors)) {
+        for (const [key, message] of Object.entries(errors)) {
+            const errorElement = document.createElement('div');
+            errorElement.className = 'error-message';
+            errorElement.textContent = message;
+            errorElement.style.color = "white";
+            errorElement.style.display = "flex";
+            errorElement.style.justifyContent = "center";
+
             if (key === 'general') {
                 const formElement = this.container.querySelector('form');
-                const errorElement = document.createElement('div');
-                errorElement.className = 'error-message general-error';
-                errorElement.textContent = message;
-                errorElement.style.color = "white";
-                errorElement.style.display = "flex";
-                errorElement.style.justifyContent = "center";
+                errorElement.classList.add('general-error');
                 formElement.prepend(errorElement);
             } else {
                 const inputElement = this.container.querySelector(`[name="${key}"]`);
                 if (inputElement) {
                     const inputBox = inputElement.closest('.input-box') || inputElement.parentNode;
-                    const errorElement = document.createElement('div');
-                    errorElement.className = 'error-message';
-                    errorElement.textContent = message;
-                    errorElement.style.color = "white";
-                    errorElement.style.display = "flex";
-                    errorElement.style.justifyContent = "center";
                     inputBox.appendChild(errorElement);
                 } else {
                     console.warn(`No input field found for ${key}`);
@@ -73,6 +77,7 @@ export default class API {
             }
         }
     }
+
 
     async signin(data, url) {
         const { UsernameOrEmail, Password } = data;
